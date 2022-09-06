@@ -1,0 +1,9 @@
+{
+    "name": "express-five",
+    "scripts": {
+        "start": "node main.js"
+    },
+    "dependencies": {
+        "express": "^4.18.1"
+    }
+}
