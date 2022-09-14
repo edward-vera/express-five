@@ -1,34 +1,14 @@
-// bring in express framework
-let express = require("express");
-
-// define port
-let PORT = 8080
-
-// create app server object
-let app = express();
-
-// enable our app to parse json requests
-// using body-parser middleware
-app.use(express.json());
-
-// start our application server, and print out what 
-// port its listening on
-app.listen(PORT, function(){
-    console.log("Application started on port", PORT);
-});
-
-// database of items
 let exercise = [];
 
 // get all workouts
-app.get("/exercise", function(req, res){
+let getExercise = function(req, res){
     console.log("GET /exercise");
     res.json(exercise);
     
-});
+};
 
 // get items listed by workout
-app.get("/exercise/:workout", function(req, res){
+let getSingleExercise = function(req, res){
     console.log("GET /exercise/:workout")
     let myWorkout = req.params.workout;
 
@@ -44,10 +24,10 @@ app.get("/exercise/:workout", function(req, res){
     }else{
         res.json(null);
     }
-});
+};
 
 // delete a specific exercise by workout
-app.delete("/exercise/:workout", function(req, res){
+let deleteExercise =  function(req, res){
     console.log("DELETE /exercise/:workout");
 
 
@@ -67,16 +47,17 @@ app.delete("/exercise/:workout", function(req, res){
         let deletedWorkout = exercise.splice(matchingWorkout, 1);
         res.json(deletedWorkout);
     }
-});
+};
 
 
 // create/post an item
-app.post("/exercise", function(req, res){
+let createExercise = function(req, res){
     console.log("POST /exercise");
 
     // read description on new req body
     // create a new exercise
     let newWorkout = {};
+    newWorkout.workout = req.body.workout;
     newWorkout.description = req.body.description;
     newWorkout.reps = req.body.reps;
     newWorkout.sets = req.body.sets;
@@ -95,11 +76,11 @@ app.post("/exercise", function(req, res){
     exercise.push(newWorkout);
     // return new workout on res
     res.json(newWorkout);
-});
+};
 
 
 // update/put an exercise
-app.put("/excercise/:workout", function(req, res){
+let updateExercise = function(req, res){
     console.log("PUT /exercise/:workout")
 
     // get workout to update from the route
@@ -127,13 +108,16 @@ app.put("/excercise/:workout", function(req, res){
     // and return the updated item in the res
     // if not return null
     if(matchingWorkout){
+        matchingWorkout.workout = myWorkout;
         matchingWorkout.description = description;
         matchingWorkout.sets = sets;
         matchingWorkout.reps = reps;
         matchingWorkout.completed = completed;
+        return res.json(matchingWorkout);
     }else{
         return res.json(null)
     }
+};
 
 
-});
+module.exports = {getExercise, getSingleExercise, deleteExercise, updateExercise, createExercise};
