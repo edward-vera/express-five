@@ -11,7 +11,7 @@ let app = express();
 // enable our app to parse json requests
 // using body-parser middleware
 app.use(express.json());
-app.use(express.static("public"));
+app.use(express.static("/public"));
 
 
 // will capture all the todo routes
