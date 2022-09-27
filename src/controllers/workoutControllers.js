@@ -1,123 +1,203 @@
-let exercise = [];
 
-// get all workouts
-let getExercise = function(req, res){
-    console.log("GET /exercise");
-    res.json(exercise);
-    
-};
+const { resume } = require("../utility/db");
+let db = require("../utility/db");
 
-// get items listed by workout
-let getSingleExercise = function(req, res){
-    console.log("GET /exercise/:workout")
-    let myWorkout = req.params.workout;
+/**
+ * This function takes in a request and a response object
+ * and returns a summary of all the todos items in the response
+ * If the query failes for any reason, then return 500 status code
+ */
+let getAllExercise = function(req, res){
+// what kind of query do we send
+// to get all the items in the database
+    let sql = "select * from exercise";
 
-
-    // find exercises in db that match the workout chosen
-    let matchingWorkout = exercise.find(function(item, index){
-        return item.workout == myWorkout;
-    })
-
-    // find exercise with matching workout in the array
-    if(matchingWorkout){
-        res.json(matchingWorkout);
-    }else{
-        res.json(null);
-    }
-};
-
-// delete a specific exercise by workout
-let deleteExercise =  function(req, res){
-    console.log("DELETE /exercise/:workout");
-
-
-    // find workout you want to delete
-    let myWorkout = req.params.workout;
-
-    // find position of workout in array and remove it from the array
-    let matchingWorkout = exercise.findIndex(function(item, index){
-        return item.workout != myWorkout;
-    })
-    
-    // if index < 0 then there is no match in the array
-    if (matchingWorkout < 0){
-        res.json(null);
-    }else {
-        // remove item in exercise array and return it
-        let deletedWorkout = exercise.splice(matchingWorkout, 1);
-        res.json(deletedWorkout);
-    }
-};
-
-
-// create/post an item
-let createExercise = function(req, res){
-    console.log("POST /exercise");
-
-    // read description on new req body
-    // create a new exercise
-    let newWorkout = {};
-    newWorkout.workout = req.body.workout;
-    newWorkout.description = req.body.description;
-    newWorkout.reps = req.body.reps;
-    newWorkout.sets = req.body.sets;
-    newWorkout.completed = false;
-
-
-
-    // let newWorkout = {
-    //     "description": req.body.description,
-    //     "sets": req.body.sets,
-    //     "reps": req.body.reps,
-    //     "completed": false
-    // }
-
-    // add new workout to exercise array
-    exercise.push(newWorkout);
-    // return new workout on res
-    res.json(newWorkout);
-};
-
-
-// update/put an exercise
-let updateExercise = function(req, res){
-    console.log("PUT /exercise/:workout")
-
-    // get workout to update from the route
-    let myWorkout = req.params.workout;
-
-    // get the new workout from the body
-    let description = req.body.description;
-
-    // get new sets from the body
-    let sets = req.body.sets;
-
-    // get new reps
-    let reps = req.body.reps;
-    
-    // get new completed flag from the body only if equal to true
-    // forces the flag to be true or false
-    let completed = req.body.completed == true;
-
-    // we need to get item we want to update from the exercise array
-    let matchingWorkout = exercise.find(function(item, index){
-        return item.workout = myWorkout;
+    db.query(sql, function(err, rows){
+        if(err){
+            console.log("list exercise query failed", err);
+            res.sendStatus(500); //response back because it was our fault
+        }else{
+            res.json(rows);
+        }
     });
 
-    // if we found a matching item, update it
-    // and return the updated item in the res
-    // if not return null
-    if(matchingWorkout){
-        matchingWorkout.workout = myWorkout;
-        matchingWorkout.description = description;
-        matchingWorkout.sets = sets;
-        matchingWorkout.reps = reps;
-        matchingWorkout.completed = completed;
-        return res.json(matchingWorkout);
-    }else{
-        return res.json(null)
-    }
 };
 
+/**
+ * this function takes in a request and reponse object
+ * and returns a single exercise item based on the id that is
+ * a path parameter in the request
+ * 
+ * if the id is not a valid id, the response will be 'null'
+ * otherwise, the entire exercise object will be returned in the response
+ * 
+ * /exercise/:workout
+ */
+ let getSingleExercise = function(req, res){
+    // what kind of query do we send
+    // to get one the items in the database
+    
+            // this is bad, you should not do this...
+            let id = req.params.id; // because the id is a path param
+    
+            // if id is falsey (null, undefined, '')
+            if(!id){
+                res.sendStatus(404);
+                return;
+            }
+    
+            let sql = "select id, workout, description, notes from exercise where id = ?";
+            let params = [id];
+    
+            db.query(sql, params, function(err, rows){
+                if(err){
+                console.log("failed to get an item from the db", err);
+                res.sendStatus(500);
+            } else { 
+                if(rows.length > 1){
+                    console.log("returned more than 1 row for id", id);
+                    res.sendStatus(500);
+                } else if (rows.length == 0){
+                    res.json(null);
+                } else {
+    
+                    // grab the first row
+                    // and alter it before sending it on to the client
+                    // we are replacing the done (0,1)  with (no, yes)
+                    let row = rows[0];
+                    if(row.done == 1){
+                        row.done = 'yes';
+                    }else{
+                        row.done = 'no';
+                    }                
+                    res.json(row);
+    
+                }
+            }
+            
+            });
+    
+    };
 
-module.exports = {getExercise, getSingleExercise, deleteExercise, updateExercise, createExercise};
+/**
+ * this function takes in a request and responds by deleting it
+ * the request should include a json object that includes
+ * -- description
+ * -- notes
+ * we will delete an entry in the todos database, with the corresponding
+ * id that was generated for it
+ * 
+ * if the item has already been deleted we will return "Item doesn't exist"
+ */
+ let deleteExercise = function(req, res){
+    // what kind of query do we send
+    // to get delete the items in the database
+    
+        let sql = "delete from exercise where id = ?";
+        
+        let id = req.params.id;
+        let params = [id];
+    
+        db.query(sql, params, function(err, rows){
+            if(err){
+                console.log("Nothing exists", err);
+                res.sendStatus(200);
+            }else{
+                console.log("id successfully deleted total rows =",  rows.affectedRows,"id =", id);
+                res.json(rows);
+            }
+        });
+    };
+
+
+/**
+ * this function accepts req and res
+ * the req should include a json object that includes
+ * -- workout
+ * -- notes
+ * we will create an entry in the todos database, with the corresponding
+ * workout and notes, the id will be auto generated
+ * and item will be marked as done
+ * 
+ * the response will include.......
+ */
+ let createExercise = function(req, res){
+    // what kind of query do we send
+    // to Post the items in the database
+    
+        // the comlumns in the table are the contract between express and the db
+        let sql = "INSERT INTO exercise (id, workout, description, notes) VALUES (?, ?, ?, ?)"
+        let params = [
+            req.body.id,
+            req.body.workout, //this is the contrace with the client side, we expect in the body of the req
+            req.body.description, //this is the contrace with the client side, we expect in the body of the req
+            req.body.notes, // this is the contract with the client side, we expect in the body of the req
+        ];
+    
+        db.query(sql, params, function(err, rows){
+            if(err){
+                console.log("Failed to create an item", err);
+                res.sendStatus(500);
+            }else{
+                // if we return nothing
+                // res.sendStatus(202)
+    
+                // if we return the id:
+                // res.json(rows.insertID);
+                
+    
+                console.log("Item created", rows)
+                res.json(rows);
+            }
+        });
+    
+    
+    };
+
+
+/**
+ * this function takes in requests and responses, and it will
+ * update the exercise based on the id that is a path parameter
+ *  
+ */
+ let updateExercise = function(req, res){
+    // what kind of query do we send
+    // to Put the items in the database
+    
+        let sql = "update exercise set ? where id = ?";
+    
+        let id = req.params.id;
+        let params = [id];
+        
+        db.query(sql, params, function(err, rows){
+            if(err){
+                console.log("Updating the user wasn't succesful", err);
+                res.sendStatus(500);
+            }else{
+                let resSql = "select description, notes from exercise where id = ?";
+                let resParams = [id];
+                    db.query(resSql, resParams, function(err, rows){
+                        if(err){
+                        console.log("The id getExercise query failed", err);
+                        res.sendStatus(500);
+                            }else{
+                                if(rows.length > 1) {
+                                    console.log("Something Wrong", id);
+                                    res.sendStatus(500);
+                                } else if(rows.length === 0){
+                                    res.json(null);
+                                } else {
+                                    res.json(rows[0]);
+                                    }
+                            
+                                }
+                        
+                            
+                });
+            }
+    
+        });
+    };
+
+
+module.exports = {getAllExercise, getSingleExercise, deleteExercise, updateExercise, createExercise};

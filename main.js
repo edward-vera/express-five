@@ -2,20 +2,20 @@
 let express = require("express");
 
 // define port
-let PORT = 8080
+let PORT = 8080;
 
 // create app server object
 let app = express();
 
 
-// enable our app to parse json requests
-// using body-parser middleware
-app.use(express.json());
-app.use(express.static("/public"));
+// // enable our app to parse json requests
+// // using body-parser middleware
+// app.use(express.json());
+// app.use(express.static("/public"));
 
 
 // will capture all the todo routes
-let workoutRoutes = require("./routes/workoutRoutes");
+let workoutRoutes = require("./src/routes/workoutRoutes");
 app.use(workoutRoutes);
 
 // start our application server, and print out what 
