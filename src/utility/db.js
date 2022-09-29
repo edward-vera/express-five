@@ -2,10 +2,10 @@
 let mysql = require("mysql");
 
 let connection = mysql.createConnection({
-    host: "first-database.chxhfuhqi361.us-east-2.rds.amazonaws.com",
-    user: "admin",
-    password: "xBoxlive195",
-    database: "hello"
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE,
 });
 
 
@@ -30,9 +30,6 @@ let callback = function(err, rows){
     }
 };
 
-// executes the query, and handles the results
-connection.query(sql, callback);
-
 // this is async
 connection.query("select now()"  , function(err, rows){
     if(err){
@@ -42,8 +39,5 @@ connection.query("select now()"  , function(err, rows){
     }
 
 });
-
-// execute the query, and handle the results
-connection.query(sql, callback);
 
 module.exports = connection;

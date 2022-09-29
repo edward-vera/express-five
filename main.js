@@ -1,6 +1,8 @@
 // bring in express framework
 let express = require("express");
 
+require("dotenv").config();
+
 // define port
 let PORT = 8080;
 
@@ -8,10 +10,10 @@ let PORT = 8080;
 let app = express();
 
 
-// // enable our app to parse json requests
-// // using body-parser middleware
-// app.use(express.json());
-// app.use(express.static("/public"));
+// enable our app to parse json requests
+// using body-parser middleware
+app.use(express.json());
+app.use(express.static("/public"));
 
 
 // will capture all the todo routes

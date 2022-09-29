@@ -10,7 +10,7 @@ let db = require("../utility/db");
 let getAllExercise = function(req, res){
 // what kind of query do we send
 // to get all the items in the database
-    let sql = "select * from exercise";
+    let sql = "select id, workout, description, notes from exercise"; 
 
     db.query(sql, function(err, rows){
         if(err){
@@ -101,7 +101,7 @@ let getAllExercise = function(req, res){
         db.query(sql, params, function(err, rows){
             if(err){
                 console.log("Nothing exists", err);
-                res.sendStatus(200);
+                res.sendStatus(400);
             }else{
                 console.log("id successfully deleted total rows =",  rows.affectedRows,"id =", id);
                 res.json(rows);
@@ -126,9 +126,8 @@ let getAllExercise = function(req, res){
     // to Post the items in the database
     
         // the comlumns in the table are the contract between express and the db
-        let sql = "INSERT INTO exercise (id, workout, description, notes) VALUES (?, ?, ?, ?)"
+        let sql = "INSERT INTO exercise (workout, description, notes) VALUES (?, ?, ?)"
         let params = [
-            req.body.id,
             req.body.workout, //this is the contrace with the client side, we expect in the body of the req
             req.body.description, //this is the contrace with the client side, we expect in the body of the req
             req.body.notes, // this is the contract with the client side, we expect in the body of the req
@@ -164,40 +163,26 @@ let getAllExercise = function(req, res){
     // what kind of query do we send
     // to Put the items in the database
     
-        let sql = "update exercise set ? where id = ?";
-    
+        // the comlumns in the table are the contract between express and the db
         let id = req.params.id;
-        let params = [id];
+        if(!id){
+            res.sendStatus(500);
+            return;
+        }
+
+        let sql = "update exercise set workout = ?, description =?, notes = ? where id = ?";
+        let params = [req.body.workout, req.body.description, req.body.notes, id]
         
+
         db.query(sql, params, function(err, rows){
             if(err){
                 console.log("Updating the user wasn't succesful", err);
-                res.sendStatus(500);
+                res.sendStatus(500); //because the error is on our side
             }else{
-                let resSql = "select description, notes from exercise where id = ?";
-                let resParams = [id];
-                    db.query(resSql, resParams, function(err, rows){
-                        if(err){
-                        console.log("The id getExercise query failed", err);
-                        res.sendStatus(500);
-                            }else{
-                                if(rows.length > 1) {
-                                    console.log("Something Wrong", id);
-                                    res.sendStatus(500);
-                                } else if(rows.length === 0){
-                                    res.json(null);
-                                } else {
-                                    res.json(rows[0]);
-                                    }
-                            
-                                }
-                        
-                            
-                });
-            }
-    
+                console.log("Player Updated", rows);
+                res.sendStatus(200); // no data sent
+            };
         });
     };
-
 
 module.exports = {getAllExercise, getSingleExercise, deleteExercise, updateExercise, createExercise};
